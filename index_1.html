@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map Detective — HUME 125</title>
+<meta name="description" content="Teacher-run quiz-show web app for HUME 125: ten rounds on GIS analytical operations used to extract human-ecological information from maps.">
+<style>
+:root{
+  --ground:#f4ede1; --ink:#1b3a34; --panel:#ffffff; --panel-2:#eae1cf;
+  --line: rgba(27,58,52,0.14); --accent:#c97a2b; --accent-ink:#5a3a10;
+  --sage:#4f7d6c; --sage-ink:#26443a; --good:#3f8c5e; --good-bg:#e3f3e7;
+  --bad:#c1503a; --bad-bg:#fbe6e0; --shadow: 0 14px 34px rgba(27,58,52,0.16);
+  --font-display:'Fraunces',Georgia,serif; --font-body:'IBM Plex Sans',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#122420; --ink:#eee6d6; --panel:#1a352f; --panel-2:#20443b;
+    --line: rgba(238,230,214,0.14); --accent:#e3a35b; --accent-ink:#3b2409;
+    --sage:#8bbba7; --sage-ink:#dff0e8; --good:#6fce93; --good-bg:#1e3d2c;
+    --bad:#e78871; --bad-bg:#3e2019; --shadow: 0 14px 34px rgba(0,0,0,0.4);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#122420; --ink:#eee6d6; --panel:#1a352f; --panel-2:#20443b;
+  --line: rgba(238,230,214,0.14); --accent:#e3a35b; --accent-ink:#3b2409;
+  --sage:#8bbba7; --sage-ink:#dff0e8; --good:#6fce93; --good-bg:#1e3d2c;
+  --bad:#e78871; --bad-bg:#3e2019; --shadow: 0 14px 34px rgba(0,0,0,0.4);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;}
+body{background:var(--ground); color:var(--ink); font-family:var(--font-body); padding-inline:20px; padding-block:20px; min-height:100%;}
+h1,h2,h3{font-family:var(--font-display); font-weight:600; text-wrap:balance; margin:0;}
+.wrap{max-width:920px; margin:0 auto; display:flex; flex-direction:column; gap:16px;}
+.eyebrow{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--sage-ink); font-weight:600;}
+.topbar{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
+.badge{background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600;}
+.timerbar{height:8px; border-radius:999px; background:var(--panel-2); overflow:hidden; border:1px solid var(--line);}
+.timerfill{height:100%; background:var(--accent); width:100%; transition:width 1s linear;}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:26px; box-shadow:var(--shadow);}
+.mapicon{font-size:40px; line-height:1;}
+.scenario{font-size:17px; line-height:1.55; margin-top:10px;}
+.options{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px;}
+@media (max-width:520px){.options{grid-template-columns:1fr;}}
+.opt{text-align:left; border:1px solid var(--line); background:var(--panel-2); color:var(--ink); border-radius:12px; padding:14px 16px; font-family:var(--font-body); font-size:15px; cursor:pointer; transition:transform .12s ease, border-color .12s ease;}
+.opt:hover{border-color:var(--accent);}
+.opt:focus-visible{outline:3px solid var(--accent); outline-offset:2px;}
+.opt.correct{background:var(--good-bg); border-color:var(--good); color:var(--ink); font-weight:600;}
+.opt.wrong{background:var(--bad-bg); border-color:var(--bad); opacity:.7;}
+.opt[disabled]{cursor:default;}
+.explain{margin-top:18px; padding-top:16px; border-top:1px dashed var(--line); font-size:14.5px; line-height:1.6; display:none;}
+.explain.show{display:block;}
+.btnrow{display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;}
+button.primary{background:var(--accent); color:var(--accent-ink); border:none; border-radius:10px; padding:12px 20px; font-weight:700; font-size:15px; cursor:pointer; font-family:var(--font-body);}
+button.primary:hover{filter:brightness(1.06);}
+button.ghost{background:transparent; border:1px solid var(--line); color:var(--ink); border-radius:10px; padding:12px 18px; font-weight:600; font-size:15px; cursor:pointer; font-family:var(--font-body);}
+.scoreboard{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;}
+.team{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:6px;}
+.team .name{font-weight:700; font-size:14px;}
+.team .pts{font-family:var(--font-display); font-size:26px; font-variant-numeric:tabular-nums;}
+.team .grant{display:flex; gap:6px;}
+.chip{border:1px solid var(--line); background:var(--panel-2); border-radius:8px; padding:5px 9px; font-size:12px; font-weight:700; cursor:pointer;}
+.chip:hover{border-color:var(--accent);}
+.setup-row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+input[type=text]{font-family:var(--font-body); font-size:15px; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--panel-2); color:var(--ink); flex:1; min-width:140px;}
+ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
+.hide{display:none;}
+.footnote{font-size:13px; color:var(--sage-ink); line-height:1.5;}
+.finalrank{display:flex; flex-direction:column; gap:10px;}
+.rankrow{display:flex; justify-content:space-between; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 16px;}
+.rankrow .place{font-family:var(--font-display); font-size:20px; width:34px;}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="eyebrow">HUME 125 · Map Detective</div>
+      <h1 style="font-size:26px;">Maps as Sources of Human&nbsp;Ecological Information</h1>
+    </div>
+    <div id="roundBadge" class="badge hide"></div>
+  </div>
+
+  <!-- SETUP -->
+  <div id="screen-setup" class="card">
+    <h2 style="font-size:20px;">Set up your teams</h2>
+    <p class="footnote">Enter 3–6 team names, then start. Each round shows a scenario built from a GIS analytical operation; teams answer out loud or on a whiteboard, and you award points below once the correct answer is revealed.</p>
+    <ol class="teamlist" id="teamInputs"></ol>
+    <div class="btnrow">
+      <button class="ghost" id="addTeamBtn" type="button">+ Add team</button>
+      <button class="primary" id="startBtn" type="button">Start game →</button>
+    </div>
+  </div>
+
+  <!-- ROUND -->
+  <div id="screen-round" class="card hide">
+    <div class="eyebrow" id="mapLabel">Round</div>
+    <div class="mapicon" id="mapIcon">🗺️</div>
+    <h2 id="mapName" style="font-size:22px; margin-top:6px;"></h2>
+    <div class="timerbar" style="margin-top:14px;"><div class="timerfill" id="timerFill"></div></div>
+    <p class="scenario" id="scenarioText"></p>
+    <div class="options" id="optionsWrap"></div>
+    <div class="explain" id="explainBox"></div>
+    <div class="btnrow">
+      <button class="ghost" id="revealBtn" type="button">Reveal answer</button>
+      <button class="primary hide" id="nextBtn" type="button">Next round →</button>
+    </div>
+  </div>
+
+  <!-- FINAL -->
+  <div id="screen-final" class="card hide">
+    <div class="eyebrow">Final standings</div>
+    <h2 style="font-size:22px; margin-top:4px;">Nice reading, detectives.</h2>
+    <div class="finalrank" id="finalRank" style="margin-top:16px;"></div>
+    <p class="footnote" style="margin-top:18px;">Move to discussion: each team names ONE GIS operation from today and a real human-ecological question it could answer. Then: in the final round's workflow, could a different chain of operations get the same answer?</p>
+  </div>
+
+  <div class="card" id="scoreCard">
+    <div class="eyebrow" style="margin-bottom:10px;">Scoreboard</div>
+    <div class="scoreboard" id="scoreboard"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var ROUNDS = [
+    {
+      label: "Round 1 of 10", icon: "🗄️", name: "Database Query",
+      scenario: "A researcher points the cursor at one spot on a land-cover raster and asks 'what class is this?' — then runs SELECT * FROM raster_project2_Clip WHERE Class = 'GRASSLANDS' to pull every polygon of that type.",
+      options: [
+        "Database query — asking a question about stored location or attribute data",
+        "Map algebra — combining layers with a mathematical expression",
+        "Terrain analysis — deriving slope from elevation",
+        "Geoprocessing — dissolving polygons by attribute"
+      ],
+      correct: 0,
+      explain: "This is exactly the deck's ArcMap example: a location query (click a point, get its Class) and an attribute/SQL query (WHERE Class='GRASSLANDS'). Database query is how you ask stored data a question — nothing is being calculated or combined."
+    },
+    {
+      label: "Round 2 of 10", icon: "➗", name: "Map Algebra",
+      scenario: "A rainfall map is stored in millimeters. A hydrologist needs every cell converted to centimeters, so they run the expression [nrain] / 10 to produce a new map, nrain_cm.",
+      options: [
+        "Map algebra — a syntax for combining/transforming map themes using mathematical operations",
+        "Database query — retrieving stored attribute values",
+        "Distance operator — measuring how far apart two features are",
+        "Overlay analysis — combining two layers' attribute tables"
+      ],
+      correct: 0,
+      explain: "Straight from the deck's Idrisi example: dividing a whole raster by 10 to change units is a mathematical operation applied across a map theme — the definition of map algebra, not a query or a distance calculation."
+    },
+    {
+      label: "Round 3 of 10", icon: "📏", name: "Distance Operators — Buffer",
+      scenario: "A DRRM office needs a 500-meter hazard zone drawn around every river segment, so it can flag which structures fall inside that danger zone.",
+      options: [
+        "Distance operators — buffer, a zone around a feature measured in distance or time",
+        "Geoprocessing — clip",
+        "Map algebra — a mathematical expression",
+        "Overlay analysis — combining attribute tables"
+      ],
+      correct: 0,
+      explain: "A buffer is exactly this: 'a zone around a map feature measured in units of distance or time... useful for proximity analysis' (ESRI, as quoted in the deck). It's a Distance Operator, alongside Euclidean distance and Thiessen polygons."
+    },
+    {
+      label: "Round 4 of 10", icon: "📐", name: "Distance Operators — Euclidean vs. Thiessen",
+      scenario: "A planner needs two different distance answers: (1) the straight-line distance from every household to the nearest evacuation center, and (2) a boundary around each evacuation center showing exactly which households it's the closest one to.",
+      options: [
+        "Euclidean distance for (1); Thiessen polygon for (2)",
+        "Buffer for both (1) and (2)",
+        "Map algebra for both (1) and (2)",
+        "Database query for both (1) and (2)"
+      ],
+      correct: 0,
+      explain: "Euclidean distance is the straight-line distance between two points, via the Pythagorean theorem. A Thiessen polygon defines an area of influence around a sample point, where every location inside it is closer to that point than to any other — exactly a 'closest center' service area."
+    },
+    {
+      label: "Round 5 of 10", icon: "🗺️", name: "Overlay Analysis",
+      scenario: "Layer A carries soil type (soil_name) per polygon; Layer B carries land use per polygon. A planner stacks them so the output layer's attribute table shows BOTH soil_name and land use for every resulting piece of ground.",
+      options: [
+        "Overlay analysis — combining layers so attributes from both are carried into one output",
+        "Database query — selecting features that meet a condition",
+        "Distance operator — buffering a feature",
+        "Terrain analysis — computing aspect from elevation"
+      ],
+      correct: 0,
+      explain: "This is the deck's vector-overlay example almost exactly: two input layers, each with its own attribute table, combined into one output layer whose attribute table merges both — the defining move of overlay analysis (vector or raster)."
+    },
+    {
+      label: "Round 6 of 10", icon: "⚙️", name: "Geoprocessing — Merge & Clip",
+      scenario: "Two adjoining municipal shapefiles need to be appended into one theme (merge), and then a barangay boundary is used like a cookie-cutter to cut out just the part of a land-cover raster that falls inside it (clip).",
+      options: [
+        "Geoprocessing — merge appends themes together; clip cuts one theme using another like a cookie cutter",
+        "Map algebra — a mathematical expression on raster cells",
+        "Database query — a SQL WHERE clause",
+        "Distance operator — Thiessen polygons around sample points"
+      ],
+      correct: 0,
+      explain: "Merge ('appends the features of two or more themes') and clip ('uses a clip theme like a cookie cutter') are named exactly this way in the deck's GeoProcessing dialog — both are geoprocessing operations, alongside dissolve, intersect, union, and spatial join."
+    },
+    {
+      label: "Round 7 of 10", icon: "⚙️", name: "Geoprocessing — Intersect vs. Union",
+      scenario: "For one output, a planner wants ONLY the area where a hazard-zone theme and a settlement theme both exist. For a second output, the planner wants the FULL combined extent of both themes, keeping both sets of attributes even where they don't overlap.",
+      options: [
+        "Intersect for the first output; Union for the second",
+        "Merge for both outputs",
+        "Dissolve for both outputs",
+        "Spatial join for both outputs"
+      ],
+      correct: 0,
+      explain: "Intersect 'cuts an input theme with the features from an overlay theme' to keep only the shared area. Union 'combines features... to produce an output theme that contains the attributes and full extent of both themes.' Both are named this way in the deck's GeoProcessing dialog."
+    },
+    {
+      label: "Round 8 of 10", icon: "⛰️", name: "Terrain Analysis — Contours & Slope",
+      scenario: "A topographic map shows tightly packed contour lines along one section of a ridge. Using the formula slope (%) = (rise/run) × 100, a planner finds that section's slope translates to well over 1.72° — above the safe threshold for construction.",
+      options: [
+        "Terrain analysis — contour density signals slope, calculated from rise over run",
+        "Overlay analysis — combining two attribute tables",
+        "Distance operators — Euclidean distance",
+        "Database query — a SQL WHERE clause"
+      ],
+      correct: 0,
+      explain: "Tightly packed contour lines mean a steep slope; the deck's own worked example converts a 3% slope to 1.72° using tan⁻¹(rise/run). Both contour reading and slope calculation are terrain analysis — deriving a variable from elevation, not querying or overlaying."
+    },
+    {
+      label: "Round 9 of 10", icon: "🌊", name: "Terrain Analysis — Flow & Watershed",
+      scenario: "Using only an elevation surface, a hydrologist calculates the direction water flows off every cell, then traces the watershed — the uphill area that drains into one specific creek.",
+      options: [
+        "Terrain analysis — flow direction and watershed, both derived from elevation",
+        "Geoprocessing — dissolve and merge",
+        "Database query — a location query",
+        "Map algebra — an arithmetic expression"
+      ],
+      correct: 0,
+      explain: "Flow direction (steepest descent from a cell to its neighbors) and watershed (the uphill area draining to a point, identified once flow direction is known) are both terrain variables computed from elevation — the deck's own Terrain Analysis examples."
+    },
+    {
+      label: "Round 10 of 10", icon: "🧩", name: "Chain the Tools",
+      scenario: "A planner must find safe relocation sites for flood-prone households: (1) draw a 100 m buffer along the river, (2) overlay that buffer zone with a land-tenure layer, (3) clip the result to the municipal boundary, (4) query which remaining parcels are NOT already tagged 'residential'. Which operation does step (1) use?",
+      options: [
+        "Distance operators (buffer)",
+        "Database query",
+        "Map algebra",
+        "Terrain analysis"
+      ],
+      correct: 0,
+      explain: "Step 1 is a buffer (Distance operators). The full chain uses four different operations in sequence — buffer → overlay → geoprocessing (clip) → database query — which is the point: real human-ecological questions rarely need just one tool. Ask the class to name which operation each of steps 2–4 uses before moving to discussion."
+    }
+  ];
+  var ALL = ROUNDS;
+
+  var state = { teams: [], scores: {}, round: -1, timer: null, timeLeft: 30, revealed:false, shuffledCorrect: 0 };
+
+  var teamInputs = document.getElementById('teamInputs');
+  var scoreboard = document.getElementById('scoreboard');
+  var scoreCard = document.getElementById('scoreCard');
+
+  function addTeamRow(defaultName){
+    var li = document.createElement('li');
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Team name';
+    input.value = defaultName || '';
+    li.appendChild(input);
+    teamInputs.appendChild(li);
+  }
+  ['Contour Crew','Delta Team','Ridge Runners'].forEach(addTeamRow);
+
+  document.getElementById('addTeamBtn').addEventListener('click', function(){ addTeamRow(''); });
+
+  document.getElementById('startBtn').addEventListener('click', function(){
+    var inputs = teamInputs.querySelectorAll('input');
+    state.teams = [];
+    inputs.forEach(function(inp, i){
+      var v = inp.value.trim() || ('Team ' + (i+1));
+      state.teams.push(v);
+      state.scores[v] = 0;
+    });
+    renderScoreboard();
+    document.getElementById('screen-setup').classList.add('hide');
+    scoreCard.classList.remove('hide');
+    nextRound();
+  });
+
+  function renderScoreboard(){
+    scoreboard.innerHTML = '';
+    state.teams.forEach(function(t){
+      var div = document.createElement('div');
+      div.className = 'team';
+      var grantHtml = '';
+      if (state.round >= 0 && state.revealed) {
+        grantHtml = '<div class="grant"><button class="chip" data-team="'+t+'" data-pts="10">+10</button><button class="chip" data-team="'+t+'" data-pts="5">+5</button></div>';
+      }
+      div.innerHTML = '<div class="name">'+t+'</div><div class="pts">'+state.scores[t]+'</div>'+grantHtml;
+      scoreboard.appendChild(div);
+    });
+    scoreboard.querySelectorAll('.chip').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var team = btn.getAttribute('data-team');
+        var pts = parseInt(btn.getAttribute('data-pts'), 10);
+        state.scores[team] += pts;
+        renderScoreboard();
+      });
+    });
+  }
+
+  function nextRound(){
+    state.round += 1;
+    state.revealed = false;
+    clearInterval(state.timer);
+    if (state.round >= ALL.length){ showFinal(); return; }
+    var r = ALL[state.round];
+    document.getElementById('screen-round').classList.remove('hide');
+    document.getElementById('screen-final').classList.add('hide');
+    var badge = document.getElementById('roundBadge');
+    badge.classList.remove('hide');
+    badge.textContent = r.label;
+    document.getElementById('mapLabel').textContent = r.label;
+    document.getElementById('mapIcon').textContent = r.icon;
+    document.getElementById('mapName').textContent = r.name;
+    document.getElementById('scenarioText').textContent = r.scenario;
+    // Shuffle the options each time so the correct answer isn't always the same letter.
+    var order = r.options.map(function(_, i){ return i; });
+    for (var k = order.length - 1; k > 0; k--) {
+      var j = Math.floor(Math.random() * (k + 1));
+      var tmp = order[k]; order[k] = order[j]; order[j] = tmp;
+    }
+    state.shuffledCorrect = order.indexOf(r.correct);
+
+    var wrap = document.getElementById('optionsWrap');
+    wrap.innerHTML = '';
+    order.forEach(function(origIdx, i){
+      var b = document.createElement('button');
+      b.className = 'opt';
+      b.type = 'button';
+      b.textContent = String.fromCharCode(65+i) + '.  ' + r.options[origIdx];
+      b.dataset.idx = i;
+      wrap.appendChild(b);
+    });
+    var explain = document.getElementById('explainBox');
+    explain.classList.remove('show');
+    explain.textContent = '';
+    document.getElementById('nextBtn').classList.add('hide');
+    document.getElementById('revealBtn').classList.remove('hide');
+    document.getElementById('revealBtn').disabled = false;
+
+    state.timeLeft = 30;
+    var fill = document.getElementById('timerFill');
+    fill.style.width = '100%';
+    state.timer = setInterval(function(){
+      state.timeLeft -= 1;
+      var pct = Math.max(0, (state.timeLeft/30)*100);
+      fill.style.width = pct + '%';
+      if (state.timeLeft <= 0){ clearInterval(state.timer); }
+    }, 1000);
+
+    renderScoreboard();
+  }
+
+  document.getElementById('revealBtn').addEventListener('click', function(){
+    var r = ALL[state.round];
+    clearInterval(state.timer);
+    state.revealed = true;
+    var opts = document.querySelectorAll('#optionsWrap .opt');
+    opts.forEach(function(o, i){
+      o.disabled = true;
+      if (i === state.shuffledCorrect) o.classList.add('correct');
+    });
+    var explain = document.getElementById('explainBox');
+    explain.textContent = r.explain;
+    explain.classList.add('show');
+    document.getElementById('revealBtn').classList.add('hide');
+    document.getElementById('nextBtn').classList.remove('hide');
+    renderScoreboard();
+  });
+
+  document.getElementById('nextBtn').addEventListener('click', nextRound);
+
+  function showFinal(){
+    document.getElementById('screen-round').classList.add('hide');
+    document.getElementById('roundBadge').classList.add('hide');
+    var screen = document.getElementById('screen-final');
+    screen.classList.remove('hide');
+    var ranked = state.teams.slice().sort(function(a,b){ return state.scores[b]-state.scores[a]; });
+    var rankDiv = document.getElementById('finalRank');
+    rankDiv.innerHTML = '';
+    ranked.forEach(function(t, i){
+      var row = document.createElement('div');
+      row.className = 'rankrow';
+      row.innerHTML = '<div style="display:flex; align-items:center; gap:14px;"><span class="place">#'+(i+1)+'</span><span style="font-weight:700;">'+t+'</span></div><span class="pts" style="font-family:var(--font-display); font-size:20px;">'+state.scores[t]+' pts</span>';
+      rankDiv.appendChild(row);
+    });
+  }
+})();
+</script>
+</body>
+</html>
