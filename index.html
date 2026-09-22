@@ -28,7 +28,6 @@
   --bad:#e78871; --bad-bg:#3e2019; --shadow: 0 14px 34px rgba(0,0,0,0.4);
 }
 *{box-sizing:border-box;}
-html,body{margin:0;}
 body{background:var(--ground); color:var(--ink); font-family:var(--font-body); padding-inline:20px; padding-block:20px; min-height:100%;}
 h1,h2,h3{font-family:var(--font-display); font-weight:600; text-wrap:balance; margin:0;}
 .wrap{max-width:920px; margin:0 auto; display:flex; flex-direction:column; gap:16px;}
@@ -38,7 +37,8 @@ h1,h2,h3{font-family:var(--font-display); font-weight:600; text-wrap:balance; ma
 .timerbar{height:8px; border-radius:999px; background:var(--panel-2); overflow:hidden; border:1px solid var(--line);}
 .timerfill{height:100%; background:var(--accent); width:100%; transition:width 1s linear;}
 .card{background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:26px; box-shadow:var(--shadow);}
-.mapicon{font-size:40px; line-height:1;}
+.mapicon{width:130px; height:92px;}
+.mapicon svg{width:100%; height:100%; display:block;}
 .scenario{font-size:17px; line-height:1.55; margin-top:10px;}
 .options{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px;}
 @media (max-width:520px){.options{grid-template-columns:1fr;}}
@@ -71,6 +71,7 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
 .rankrow .place{font-family:var(--font-display); font-size:20px; width:34px;}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+
 </head>
 <body>
 <div class="wrap">
@@ -85,7 +86,7 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
   <!-- SETUP -->
   <div id="screen-setup" class="card">
     <h2 style="font-size:20px;">Set up your teams</h2>
-    <p class="footnote">Enter 3–6 team names, then start. Each round shows a scenario built from a GIS analytical operation; teams answer out loud or on a whiteboard, and you award points below once the correct answer is revealed.</p>
+    <p class="footnote">Enter 3–6 team names, then start. Each round shows a map scenario; teams answer out loud or on a whiteboard, and you award points below once the correct answer is revealed.</p>
     <ol class="teamlist" id="teamInputs"></ol>
     <div class="btnrow">
       <button class="ghost" id="addTeamBtn" type="button">+ Add team</button>
@@ -95,8 +96,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
 
   <!-- ROUND -->
   <div id="screen-round" class="card hide">
-    <div class="eyebrow" id="mapLabel">Round</div>
-    <div class="mapicon" id="mapIcon">🗺️</div>
+    <div class="eyebrow" id="mapLabel">Map type</div>
+    <div class="mapicon hide" id="mapIcon" role="img"></div>
     <h2 id="mapName" style="font-size:22px; margin-top:6px;"></h2>
     <div class="timerbar" style="margin-top:14px;"><div class="timerfill" id="timerFill"></div></div>
     <p class="scenario" id="scenarioText"></p>
@@ -113,7 +114,7 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
     <div class="eyebrow">Final standings</div>
     <h2 style="font-size:22px; margin-top:4px;">Nice reading, detectives.</h2>
     <div class="finalrank" id="finalRank" style="margin-top:16px;"></div>
-    <p class="footnote" style="margin-top:18px;">Move to discussion: each team names ONE GIS operation from today and a real human-ecological question it could answer. Then: in the final round's workflow, could a different chain of operations get the same answer?</p>
+    <p class="footnote" style="margin-top:18px;">Move to discussion: each team names the ONE map from today that packed the most human‑ecological information into the least space — and why. Then: which two map types, overlaid, would answer a question neither could alone?</p>
   </div>
 
   <div class="card" id="scoreCard">
@@ -135,7 +136,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
         "Geoprocessing — dissolving polygons by attribute"
       ],
       correct: 0,
-      explain: "This is exactly the deck's ArcMap example: a location query (click a point, get its Class) and an attribute/SQL query (WHERE Class='GRASSLANDS'). Database query is how you ask stored data a question — nothing is being calculated or combined."
+      explain: "This is exactly the deck's ArcMap example: a location query (click a point, get its Class) and an attribute/SQL query (WHERE Class='GRASSLANDS'). Database query is how you ask stored data a question — nothing is being calculated or combined.",
+      art: '<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg"><g stroke="var(--ink)" stroke-width="2"><rect x="14" y="18" width="30" height="24" rx="3" fill="var(--panel-2)"/><rect x="48" y="18" width="30" height="24" rx="3" fill="var(--accent)" fill-opacity="0.85"/><rect x="14" y="46" width="30" height="24" rx="3" fill="var(--panel-2)"/><rect x="48" y="46" width="30" height="24" rx="3" fill="var(--panel-2)"/></g><circle cx="102" cy="58" r="17" fill="var(--panel)" stroke="var(--ink)" stroke-width="3"/><line x1="114" y1="70" x2="130" y2="86" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/><text x="102" y="64" font-size="16" text-anchor="middle" fill="var(--ink)" font-family="var(--font-display)">?</text></svg>'
     },
     {
       label: "Round 2 of 10", icon: "➗", name: "Map Algebra",
@@ -147,7 +149,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
         "Overlay analysis — combining two layers' attribute tables"
       ],
       correct: 0,
-      explain: "Straight from the deck's Idrisi example: dividing a whole raster by 10 to change units is a mathematical operation applied across a map theme — the definition of map algebra, not a query or a distance calculation."
+      explain: "Straight from the deck's Idrisi example: dividing a whole raster by 10 to change units is a mathematical operation applied across a map theme — the definition of map algebra, not a query or a distance calculation.",
+      art: '<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg"><defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--ink)"/></marker></defs><rect x="8" y="30" width="46" height="38" rx="4" fill="var(--sage)" fill-opacity="0.35" stroke="var(--ink)" stroke-width="2"/><text x="31" y="53" font-size="13" text-anchor="middle" fill="var(--ink)">mm</text><path d="M58 49 L82 49" stroke="var(--ink)" stroke-width="2.5" marker-end="url(#a1)"/><text x="70" y="40" font-size="11" text-anchor="middle" fill="var(--accent-ink)">÷10</text><rect x="86" y="30" width="46" height="38" rx="4" fill="var(--accent)" fill-opacity="0.35" stroke="var(--ink)" stroke-width="2"/><text x="109" y="53" font-size="13" text-anchor="middle" fill="var(--ink)">cm</text></svg>'
     },
     {
       label: "Round 3 of 10", icon: "📏", name: "Distance Operators — Buffer",
@@ -159,7 +162,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
         "Overlay analysis — combining attribute tables"
       ],
       correct: 0,
-      explain: "A buffer is exactly this: 'a zone around a map feature measured in units of distance or time... useful for proximity analysis' (ESRI, as quoted in the deck). It's a Distance Operator, alongside Euclidean distance and Thiessen polygons."
+      explain: "A buffer is exactly this: 'a zone around a map feature measured in units of distance or time... useful for proximity analysis' (ESRI, as quoted in the deck). It's a Distance Operator, alongside Euclidean distance and Thiessen polygons.",
+      art: '<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg"><path d="M14 72 Q45 22 70 56 T126 32" stroke="var(--sage)" stroke-width="20" stroke-linecap="round" fill="none" opacity="0.4"/><path d="M14 72 Q45 22 70 56 T126 32" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" fill="none"/><text x="70" y="92" font-size="11" text-anchor="middle" fill="var(--accent-ink)">500 m buffer</text></svg>'
     },
     {
       label: "Round 4 of 10", icon: "📐", name: "Distance Operators — Euclidean vs. Thiessen",
@@ -171,7 +175,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
         "Database query for both (1) and (2)"
       ],
       correct: 0,
-      explain: "Euclidean distance is the straight-line distance between two points, via the Pythagorean theorem. A Thiessen polygon defines an area of influence around a sample point, where every location inside it is closer to that point than to any other — exactly a 'closest center' service area."
+      explain: "Euclidean distance is the straight-line distance between two points, via the Pythagorean theorem. A Thiessen polygon defines an area of influence around a sample point, where every location inside it is closer to that point than to any other — exactly a 'closest center' service area.",
+      art: '<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="28" r="4" fill="var(--ink)"/><circle cx="24" cy="74" r="4" fill="var(--ink)"/><line x1="24" y1="28" x2="24" y2="74" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="4 3"/><line x1="62" y1="8" x2="62" y2="92" stroke="var(--line)" stroke-width="1"/><circle cx="92" cy="22" r="3.5" fill="var(--ink)"/><circle cx="122" cy="48" r="3.5" fill="var(--ink)"/><circle cx="94" cy="76" r="3.5" fill="var(--ink)"/><path d="M70 8 L108 34 L134 62 M108 34 L94 94 M70 8 L70 94" stroke="var(--sage)" stroke-width="1.5" fill="none" opacity="0.85"/></svg>'
     },
     {
       label: "Round 5 of 10", icon: "🗺️", name: "Overlay Analysis",
@@ -183,7 +188,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
         "Terrain analysis — computing aspect from elevation"
       ],
       correct: 0,
-      explain: "This is the deck's vector-overlay example almost exactly: two input layers, each with its own attribute table, combined into one output layer whose attribute table merges both — the defining move of overlay analysis (vector or raster)."
+      explain: "This is the deck's vector-overlay example almost exactly: two input layers, each with its own attribute table, combined into one output layer whose attribute table merges both — the defining move of overlay analysis (vector or raster).",
+      art: '<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="16" width="62" height="52" rx="4" fill="var(--sage)" fill-opacity="0.5" stroke="var(--ink)" stroke-width="2"/><text x="45" y="45" font-size="10" text-anchor="middle" fill="var(--ink)">soil</text><rect x="48" y="36" width="62" height="52" rx="4" fill="var(--accent)" fill-opacity="0.5" stroke="var(--ink)" stroke-width="2"/><text x="93" y="66" font-size="10" text-anchor="middle" fill="var(--ink)">land use</text></svg>'
     },
     {
       label: "Round 6 of 10", icon: "⚙️", name: "Geoprocessing — Merge & Clip",
@@ -195,7 +201,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
         "Distance operator — Thiessen polygons around sample points"
       ],
       correct: 0,
-      explain: "Merge ('appends the features of two or more themes') and clip ('uses a clip theme like a cookie cutter') are named exactly this way in the deck's GeoProcessing dialog — both are geoprocessing operations, alongside dissolve, intersect, union, and spatial join."
+      explain: "Merge ('appends the features of two or more themes') and clip ('uses a clip theme like a cookie cutter') are named exactly this way in the deck's GeoProcessing dialog — both are geoprocessing operations, alongside dissolve, intersect, union, and spatial join.",
+      art: '<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg"><defs><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--ink)"/></marker></defs><rect x="6" y="14" width="32" height="26" rx="4" fill="var(--panel-2)" stroke="var(--ink)" stroke-width="2"/><rect x="6" y="48" width="32" height="26" rx="4" fill="var(--panel-2)" stroke="var(--ink)" stroke-width="2"/><path d="M44 44 L62 44" stroke="var(--ink)" stroke-width="2" marker-end="url(#a2)"/><rect x="68" y="18" width="30" height="50" rx="4" fill="var(--sage)" fill-opacity="0.4" stroke="var(--ink)" stroke-width="2"/><circle cx="112" cy="44" r="19" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="5 3"/></svg>'
     },
     {
       label: "Round 7 of 10", icon: "⚙️", name: "Geoprocessing — Intersect vs. Union",
@@ -207,7 +214,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
         "Spatial join for both outputs"
       ],
       correct: 0,
-      explain: "Intersect 'cuts an input theme with the features from an overlay theme' to keep only the shared area. Union 'combines features... to produce an output theme that contains the attributes and full extent of both themes.' Both are named this way in the deck's GeoProcessing dialog."
+      explain: "Intersect 'cuts an input theme with the features from an overlay theme' to keep only the shared area. Union 'combines features... to produce an output theme that contains the attributes and full extent of both themes.' Both are named this way in the deck's GeoProcessing dialog.",
+      art: '<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg"><circle cx="42" cy="50" r="26" fill="none" stroke="var(--ink)" stroke-width="2"/><circle cx="68" cy="50" r="26" fill="none" stroke="var(--ink)" stroke-width="2"/><path d="M55 27 A26 26 0 0 1 55 73 A26 26 0 0 1 55 27 Z" fill="var(--accent)" fill-opacity="0.65"/><text x="55" y="55" font-size="12" text-anchor="middle" fill="var(--ink)">∩</text><text x="100" y="55" font-size="12" text-anchor="middle" fill="var(--sage-ink)">vs ∪</text></svg>'
     },
     {
       label: "Round 8 of 10", icon: "⛰️", name: "Terrain Analysis — Contours & Slope",
@@ -219,7 +227,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
         "Database query — a SQL WHERE clause"
       ],
       correct: 0,
-      explain: "Tightly packed contour lines mean a steep slope; the deck's own worked example converts a 3% slope to 1.72° using tan⁻¹(rise/run). Both contour reading and slope calculation are terrain analysis — deriving a variable from elevation, not querying or overlaying."
+      explain: "Tightly packed contour lines mean a steep slope; the deck's own worked example converts a 3% slope to 1.72° using tan⁻¹(rise/run). Both contour reading and slope calculation are terrain analysis — deriving a variable from elevation, not querying or overlaying.",
+      art: '<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg"><g stroke="var(--ink)" stroke-width="1.4" fill="none"><path d="M8 92 Q40 22 132 10"/><path d="M8 80 Q42 32 130 22"/><path d="M8 68 Q44 42 128 34"/><path d="M8 56 Q46 50 126 46"/></g><path d="M12 94 L58 94 L58 36" stroke="var(--accent)" stroke-width="2" fill="none"/><text x="34" y="90" font-size="9" fill="var(--accent-ink)">run</text><text x="64" y="66" font-size="9" fill="var(--accent-ink)">rise</text></svg>'
     },
     {
       label: "Round 9 of 10", icon: "🌊", name: "Terrain Analysis — Flow & Watershed",
@@ -231,7 +240,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
         "Map algebra — an arithmetic expression"
       ],
       correct: 0,
-      explain: "Flow direction (steepest descent from a cell to its neighbors) and watershed (the uphill area draining to a point, identified once flow direction is known) are both terrain variables computed from elevation — the deck's own Terrain Analysis examples."
+      explain: "Flow direction (steepest descent from a cell to its neighbors) and watershed (the uphill area draining to a point, identified once flow direction is known) are both terrain variables computed from elevation — the deck's own Terrain Analysis examples.",
+      art: '<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg"><defs><marker id="a3" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="var(--accent)"/></marker></defs><path d="M70 10 C30 20 20 60 70 90 C120 60 110 20 70 10 Z" fill="var(--sage)" fill-opacity="0.25" stroke="var(--ink)" stroke-width="2"/><g stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#a3)"><path d="M35 30 L64 58"/><path d="M105 30 L76 58"/><path d="M40 75 L62 62"/><path d="M100 75 L78 62"/></g><circle cx="70" cy="62" r="4" fill="var(--ink)"/></svg>'
     },
     {
       label: "Round 10 of 10", icon: "🧩", name: "Chain the Tools",
@@ -243,12 +253,13 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
         "Terrain analysis"
       ],
       correct: 0,
-      explain: "Step 1 is a buffer (Distance operators). The full chain uses four different operations in sequence — buffer → overlay → geoprocessing (clip) → database query — which is the point: real human-ecological questions rarely need just one tool. Ask the class to name which operation each of steps 2–4 uses before moving to discussion."
+      explain: "Step 1 is a buffer (Distance operators). The full chain uses four different operations in sequence — buffer → overlay → geoprocessing (clip) → database query — which is the point: real human-ecological questions rarely need just one tool. Ask the class to name which operation each of steps 2–4 uses before moving to discussion.",
+      art: '<svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg"><defs><marker id="a4" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="var(--sage)"/></marker></defs><g stroke="var(--ink)" stroke-width="2"><circle cx="14" cy="50" r="11" fill="var(--panel-2)"/><rect x="40" y="39" width="22" height="22" rx="3" fill="var(--panel-2)"/><circle cx="90" cy="50" r="11" fill="none" stroke-dasharray="3 2"/><rect x="112" y="39" width="22" height="22" rx="3" fill="var(--accent)" fill-opacity="0.5"/></g><g stroke="var(--sage)" stroke-width="2" marker-end="url(#a4)"><path d="M27 50 L38 50"/><path d="M64 50 L78 50"/><path d="M102 50 L110 50"/></g></svg>'
     }
   ];
   var ALL = ROUNDS;
 
-  var state = { teams: [], scores: {}, round: -1, timer: null, timeLeft: 30, revealed:false, shuffledCorrect: 0 };
+  var state = { teams: [], scores: {}, round: -1, timer: null, timeLeft: 45, revealed:false };
 
   var teamInputs = document.getElementById('teamInputs');
   var scoreboard = document.getElementById('scoreboard');
@@ -315,8 +326,10 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
     badge.classList.remove('hide');
     badge.textContent = r.label;
     document.getElementById('mapLabel').textContent = r.label;
-    document.getElementById('mapIcon').textContent = r.icon;
-    document.getElementById('mapName').textContent = r.name;
+    document.getElementById('mapIcon').innerHTML = r.art;
+    document.getElementById('mapIcon').setAttribute('aria-label', r.name);
+    document.getElementById('mapIcon').classList.add('hide'); // shown only on reveal, so it can't give the answer away
+    document.getElementById('mapName').textContent = 'Which GIS operation is this?'; // the operation's name is the answer, so it stays hidden until reveal
     document.getElementById('scenarioText').textContent = r.scenario;
     // Shuffle the options each time so the correct answer isn't always the same letter.
     var order = r.options.map(function(_, i){ return i; });
@@ -368,6 +381,8 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
     var explain = document.getElementById('explainBox');
     explain.textContent = r.explain;
     explain.classList.add('show');
+    document.getElementById('mapIcon').classList.remove('hide');
+    document.getElementById('mapName').textContent = r.name;
     document.getElementById('revealBtn').classList.add('hide');
     document.getElementById('nextBtn').classList.remove('hide');
     renderScoreboard();
@@ -392,5 +407,6 @@ ol.teamlist{padding-left:20px; display:flex; flex-direction:column; gap:8px;}
   }
 })();
 </script>
+
 </body>
 </html>
